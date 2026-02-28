@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wingit-gui"
+version = "0.1.1"
+description = "Open a Winget package installer GUI from a pip-installed command."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "wingit-gui contributors" }]
+license = "MIT"
+keywords = ["winget", "gui", "windows"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: Microsoft :: Windows",
+]
+
+[project.scripts]
+winget = "wingit_gui.app:main"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["wingit_gui*"]
+
+
+[project.urls]
+Homepage = "https://pypi.org/project/wingit-gui/"
