@@ -112,6 +112,14 @@ def _run(command: list[str]) -> str:
     return result.stdout
 
 
+
+def _try_run(command: list[str]) -> tuple[bool, str]:
+    """Run a command and return (ok, output_or_error)."""
+    try:
+        return True, _run(command)
+    except WingetError as error:
+        return False, str(error)
+
 def _split_row(line: str) -> list[str]:
     # winget prints table columns separated by at least 2 spaces.
     return [segment.strip() for segment in line.strip().split("  ") if segment.strip()]
@@ -159,15 +167,33 @@ def parse_search_output(raw_output: str) -> list[WingetPackage]:
 def fetch_all_packages(limit: int | None = None) -> list[WingetPackage]:
     """Query winget packages from the default source."""
     winget_command = _resolve_real_winget()
-    output = _run(
-        [
-            winget_command,
-            "search",
-            "--source",
-            "winget",
-            "--accept-source-agreements",
-        ]
-    )
+
+    base = [
+        winget_command,
+        "search",
+        "--source",
+        "winget",
+        "--accept-source-agreements",
+    ]
+
+    # Some winget versions require an explicit query argument for `search`.
+    attempts = [
+        base,
+        [*base, "--query", "*"],
+        [*base, "-q", "*"],
+    ]
+
+    last_error = "Unknown error"
+    output = ""
+    for command in attempts:
+        ok, result = _try_run(command)
+        if ok:
+            output = result
+            break
+        last_error = result
+    else:
+        raise WingetError(last_error)
+
     packages = parse_search_output(output)
     if limit is not None:
         return packages[:limit]
