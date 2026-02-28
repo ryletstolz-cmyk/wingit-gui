@@ -9,12 +9,11 @@ description = "Open a Winget package installer GUI from a pip-installed command.
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [{ name = "wingit-gui contributors" }]
-license = { text = "MIT" }
+license = "MIT"
 keywords = ["winget", "gui", "windows"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: Microsoft :: Windows",
-  "License :: OSI Approved :: MIT License",
 ]
 
 [project.scripts]
