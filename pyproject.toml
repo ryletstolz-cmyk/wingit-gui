@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wingit-gui"
-version = "0.1.0"
+version = "0.1.1"
 description = "Open a Winget package installer GUI from a pip-installed command."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -25,3 +25,7 @@ package-dir = {"" = "."}
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["wingit_gui*"]
+
+
+[project.urls]
+Homepage = "https://pypi.org/project/wingit-gui/"

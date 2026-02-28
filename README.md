@@ -27,6 +27,27 @@ The GUI will:
 - Show all discovered apps in a searchable table.
 - Let you select any app and install it with one click.
 
+## Publish to PyPI
+
+1. Build and validate distributions locally:
+
+```bash
+python -m pip install --upgrade build twine
+python -m build
+python -m twine check dist/*
+```
+
+2. Upload manually (requires a PyPI API token):
+
+```bash
+python -m twine upload dist/*
+```
+
+3. Or use GitHub Actions Trusted Publishing:
+   - Configure your project on https://pypi.org/ to trust this GitHub repository.
+   - Create a GitHub Release.
+   - The workflow in `.github/workflows/publish-pypi.yml` will build and publish automatically.
+
 ## Notes
 
 - Windows only (requires the real `winget` CLI from Microsoft App Installer).
