@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterable
 
 
@@ -22,12 +24,69 @@ class WingetPackage:
     source: str
 
 
-def ensure_winget_available() -> None:
-    """Fail fast if winget is not available in PATH."""
-    if shutil.which("winget") is None:
+def _find_winget_candidates() -> list[Path]:
+    """Return possible winget executables from PATH/where."""
+    candidates: list[Path] = []
+
+    for command_name in ("winget.exe", "winget"):
+        resolved = shutil.which(command_name)
+        if resolved:
+            candidates.append(Path(resolved).resolve())
+
+    if sys.platform.startswith("win"):
+        where_result = subprocess.run(
+            ["where", "winget.exe"],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        if where_result.returncode == 0:
+            for line in where_result.stdout.splitlines():
+                candidate = line.strip()
+                if candidate:
+                    candidates.append(Path(candidate).resolve())
+
+    # De-duplicate while preserving order.
+    unique_candidates: list[Path] = []
+    for candidate in candidates:
+        if candidate not in unique_candidates:
+            unique_candidates.append(candidate)
+
+    return unique_candidates
+
+
+def _resolve_real_winget() -> str:
+    """Resolve the system winget executable and avoid this package's launcher."""
+    candidates = _find_winget_candidates()
+    if not candidates:
         raise WingetError(
             "winget is not available in PATH. Install App Installer from Microsoft Store first."
         )
+
+    current_launcher = Path(sys.argv[0]).resolve() if sys.argv else None
+
+    filtered = [
+        path
+        for path in candidates
+        if current_launcher is None or path != current_launcher
+    ]
+
+    if not filtered:
+        raise WingetError(
+            "Could not locate the system winget executable. This command appears to resolve "
+            "to the GUI launcher itself. Make sure Microsoft App Installer is installed and "
+            "available in PATH."
+        )
+
+    preferred = next((path for path in filtered if "WindowsApps" in str(path)), filtered[0])
+    return str(preferred)
+
+
+def ensure_winget_available() -> None:
+    """Fail fast if the real system winget is not available."""
+    _resolve_real_winget()
 
 
 def _run(command: list[str]) -> str:
@@ -91,10 +150,10 @@ def parse_search_output(raw_output: str) -> list[WingetPackage]:
 
 def fetch_all_packages(limit: int | None = None) -> list[WingetPackage]:
     """Query winget packages from the default source."""
-    ensure_winget_available()
+    winget_command = _resolve_real_winget()
     output = _run(
         [
-            "winget",
+            winget_command,
             "search",
             "--source",
             "winget",
@@ -109,10 +168,10 @@ def fetch_all_packages(limit: int | None = None) -> list[WingetPackage]:
 
 def install_package(package_id: str) -> str:
     """Install a package by ID and return command output."""
-    ensure_winget_available()
+    winget_command = _resolve_real_winget()
     return _run(
         [
-            "winget",
+            winget_command,
             "install",
             "--id",
             package_id,
