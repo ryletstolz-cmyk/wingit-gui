@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
+
+
+INTERNAL_WINGET_CALL_ENV = "WINGIT_GUI_INTERNAL_WINGET_CALL"
 
 
 class WingetError(RuntimeError):
@@ -90,6 +94,9 @@ def ensure_winget_available() -> None:
 
 
 def _run(command: list[str]) -> str:
+    run_env = dict(os.environ)
+    run_env[INTERNAL_WINGET_CALL_ENV] = "1"
+
     result = subprocess.run(
         command,
         check=False,
@@ -97,6 +104,7 @@ def _run(command: list[str]) -> str:
         text=True,
         encoding="utf-8",
         errors="replace",
+        env=run_env,
     )
     if result.returncode != 0:
         stderr = result.stderr.strip() or result.stdout.strip() or "Unknown error"

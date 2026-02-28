@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
+import os
 import queue
 import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from .winget_client import WingetError, WingetPackage, fetch_all_packages, filter_packages, install_package
+from .winget_client import (
+    INTERNAL_WINGET_CALL_ENV,
+    WingetError,
+    WingetPackage,
+    fetch_all_packages,
+    filter_packages,
+    install_package,
+)
 
 
 class WingetGui(tk.Tk):
@@ -151,6 +159,13 @@ class WingetGui(tk.Tk):
 
 
 def main() -> None:
+    if os.environ.get(INTERNAL_WINGET_CALL_ENV) == "1":
+        raise SystemExit(
+            "The wingit-gui launcher was invoked as an internal winget subprocess. "
+            "This stops recursive GUI relaunch. Install Microsoft App Installer and ensure "
+            "the real winget.exe is available in PATH."
+        )
+
     try:
         app = WingetGui()
     except WingetError as error:
